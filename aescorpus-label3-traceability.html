@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AESCORPUS — Traceability Label 3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #111111;
+    --surface: #f7f7f7;
+    --accent: #111111;
+    --gold: #555555;
+    --text-dark: #111111;
+    --muted: #888888;
+    --border: #dddddd;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--surface);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    max-width: 600px;
+  }
+
+  .page-header h1 {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: #111111;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.3rem;
+  }
+
+  .page-header p {
+    font-size: 0.7rem;
+    color: #888888;
+    letter-spacing: 0.08em;
+  }
+
+  /* Editor panel */
+  .editor {
+    background: #1a1a1a;
+    border: 1px solid #333333;
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .editor-title {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #111111;
+    margin-bottom: 1rem;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .field-row.full { grid-template-columns: 1fr; }
+
+  .field label {
+    display: block;
+    font-size: 0.6rem;
+    color: #888888;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+  }
+
+  .field input, .field select {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    background: #111111;
+    border: 1px solid #333333;
+    border-radius: 3px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--surface);
+    transition: border-color 0.15s;
+  }
+
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: #111111;
+  }
+
+  .field select option { background: #111111; }
+
+  .btn-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 0.65rem;
+    border: none;
+    border-radius: 3px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-update { background: #444444; color: #ffffff; }
+  .btn-update:hover { background: #333333; }
+  .btn-print { background: #111111; color: #ffffff; }
+  .btn-print:hover { background: #000000; }
+
+  /* ── LABEL ── */
+  .label-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .label-size-note {
+    font-size: 0.62rem;
+    color: #888888;
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+
+  /* The actual label — 2" x 1.25" at 96dpi = 192px x 120px, scaled up 2.5x for screen */
+  .label {
+    width: 480px;
+    height: 300px;
+    background: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    padding: 10px 12px 8px;
+    display: grid;
+    grid-template-columns: 1fr 72px;
+    grid-template-rows: auto 1fr auto;
+    gap: 0 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  /* subtle texture lines */
+  .label::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 11px,
+      rgba(0,0,0,0.03) 11px,
+      rgba(0,0,0,0.03) 12px
+    );
+    pointer-events: none;
+  }
+
+  /* top left — header */
+  .label-header {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1px solid #dddddd;
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+  }
+
+  .label-brand {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #111111;
+    letter-spacing: 0.05em;
+    line-height: 1;
+  }
+
+  .label-brand span {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    font-weight: 400;
+    color: #888888;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .label-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    background: #111111;
+    color: #f5f0e8;
+    padding: 2px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    align-self: flex-start;
+  }
+
+  /* middle left — data fields */
+  .label-data {
+    grid-column: 1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 8px;
+    align-content: start;
+  }
+
+  .data-field { }
+
+  .data-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 6.5px;
+    color: #888888;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 1px;
+  }
+
+  .data-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    color: #111111;
+    line-height: 1.2;
+  }
+
+  .data-value.lot {
+    font-size: 11px;
+    color: #111111;
+    font-weight: 700;
+  }
+
+  /* right column — QR code */
+  .label-qr {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid #dddddd;
+    padding-left: 8px;
+    gap: 4px;
+  }
+
+  .label-qr img {
+    width: 62px;
+    height: 62px;
+    image-rendering: pixelated;
+  }
+
+  .qr-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 6px;
+    color: #888888;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  /* bottom — barcode full width */
+  .label-barcode {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    border-top: 1px solid #dddddd;
+    padding-top: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .label-barcode img {
+    height: 32px;
+    width: auto;
+    max-width: 100%;
+  }
+
+  .barcode-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 6.5px;
+    color: #444444;
+    letter-spacing: 0.2em;
+  }
+
+  /* Print styles */
+  @media print {
+    body {
+      background: white;
+      padding: 0;
+      color: black;
+    }
+
+    .page-header, .editor, .label-size-note, .btn-row {
+      display: none !important;
+    }
+
+    .label-wrapper {
+      margin: 0;
+    }
+
+    .label {
+      width: 192px;
+      height: 120px;
+      box-shadow: none;
+      border: 0.5px solid #999;
+      padding: 4px 5px 3px;
+      gap: 0 4px;
+    }
+
+    .label-brand { font-size: 5.5px; }
+    .label-brand span { font-size: 3px; }
+    .label-tag { font-size: 3px; padding: 1px 2px; }
+    .data-label { font-size: 2.5px; }
+    .data-value { font-size: 3.5px; }
+    .data-value.lot { font-size: 4.5px; }
+    .label-qr img { width: 25px; height: 25px; }
+    .qr-label { font-size: 2px; }
+    .label-barcode img { height: 13px; }
+    .barcode-text { font-size: 2.5px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>AESCORPUS — Traceability Label</h1>
+  <p>Label 3 · Internal Operations + Regulatory Traceability · 2" × 1.25"</p>
+</div>
+
+<!-- Editor -->
+<div class="editor">
+  <div class="editor-title">✦ Fill Lot Information</div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Lot Code</label>
+      <input type="text" id="lotCode" value="AES-CAC-001" placeholder="AES-CAC-001">
+    </div>
+    <div class="field">
+      <label>Product</label>
+      <select id="product">
+        <option value="Single Origin Cacao">Single Origin Cacao</option>
+        <option value="Ashwagandha">Ashwagandha</option>
+        <option value="Cacao + Ashwagandha Blend">Cacao + Ashwagandha Blend</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Pack Date</label>
+      <input type="date" id="packDate">
+    </div>
+    <div class="field">
+      <label>Expiry Date</label>
+      <input type="date" id="expiryDate">
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Origin</label>
+      <input type="text" id="origin" value="Añasco, Puerto Rico" placeholder="Añasco, Puerto Rico">
+    </div>
+    <div class="field">
+      <label>Net Weight</label>
+      <input type="text" id="weight" value="100g" placeholder="100g">
+    </div>
+  </div>
+
+  <div class="field-row full">
+    <div class="field">
+      <label>Operator Initials</label>
+      <input type="text" id="operator" value="AES" placeholder="Initials" maxlength="4">
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-update" onclick="updateLabel()">Update Label</button>
+    <button class="btn btn-print" onclick="window.print()">Print Label</button>
+  </div>
+</div>
+
+<!-- Label preview -->
+<div class="label-wrapper">
+  <div class="label-size-note">↑ Screen preview (2.5× scale) — prints at actual 2" × 1.25"</div>
+
+  <div class="label" id="theLabel">
+
+    <!-- Header -->
+    <div class="label-header">
+      <div>
+        <div class="label-brand">AESCORPUS<span>Adaptogenic · Single Origin</span></div>
+      </div>
+      <div class="label-tag">Lot Track</div>
+    </div>
+
+    <!-- Data fields -->
+    <div class="label-data">
+      <div class="data-field">
+        <div class="data-label">Lot Code</div>
+        <div class="data-value lot" id="lbl-lot">AES-CAC-001</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Product</div>
+        <div class="data-value" id="lbl-product">Single Origin Cacao</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Pack Date</div>
+        <div class="data-value" id="lbl-pack">—</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Expiry</div>
+        <div class="data-value" id="lbl-expiry">—</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Origin</div>
+        <div class="data-value" id="lbl-origin">Añasco, Puerto Rico</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Net Wt · Op</div>
+        <div class="data-value" id="lbl-weight-op">100g · AES</div>
+      </div>
+    </div>
+
+    <!-- QR code -->
+    <div class="label-qr">
+      <img id="lbl-qr" src="" alt="QR Code">
+      <div class="qr-label">Scan to<br>trace lot</div>
+    </div>
+
+    <!-- Barcode -->
+    <div class="label-barcode">
+      <img id="lbl-barcode" src="" alt="Barcode">
+      <div class="barcode-text" id="lbl-barcode-text">AES-CAC-001</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  }
+
+  function formatDateShort(dateStr) {
+    if (!dateStr) return '';
+    return dateStr.replace(/-/g, '');
+  }
+
+  function updateLabel() {
+    const lot = document.getElementById('lotCode').value || 'AES-001';
+    const product = document.getElementById('product').value;
+    const packDate = document.getElementById('packDate').value;
+    const expiryDate = document.getElementById('expiryDate').value;
+    const origin = document.getElementById('origin').value || 'Puerto Rico';
+    const weight = document.getElementById('weight').value || '—';
+    const operator = document.getElementById('operator').value || '—';
+
+    // Update text fields
+    document.getElementById('lbl-lot').textContent = lot;
+    document.getElementById('lbl-product').textContent = product;
+    document.getElementById('lbl-pack').textContent = formatDate(packDate);
+    document.getElementById('lbl-expiry').textContent = formatDate(expiryDate);
+    document.getElementById('lbl-origin').textContent = origin;
+    document.getElementById('lbl-weight-op').textContent = `${weight} · ${operator}`;
+    document.getElementById('lbl-barcode-text').textContent = lot;
+
+    // Build barcode data string: LOT-EXPIRY
+    const barcodeData = expiryDate
+      ? `${lot}-${formatDateShort(expiryDate)}`
+      : lot;
+
+    // Update Code 128 barcode
+    const barcodeUrl = `https://barcodeapi.org/api/128/${encodeURIComponent(barcodeData)}`;
+    document.getElementById('lbl-barcode').src = barcodeUrl;
+
+    // Build QR — route to correct traceability page based on product
+    const isAshwagandha = product.toLowerCase().includes('ashwagandha');
+    const traceBase = isAshwagandha
+      ? 'https://gabvaron.github.io/Aescorpus/aescorpus-trace-ashwagandha.html'
+      : 'https://gabvaron.github.io/Aescorpus/';
+    const traceParams = `?d=LOT:${lot}|PROD:${product}|ORIG:${origin}|EXP:${formatDate(expiryDate)}|OP:${operator}`;
+    const traceUrl = traceBase + traceParams;
+    const qrUrl = `https://barcodeapi.org/api/qr/${encodeURIComponent(traceUrl)}`;
+    document.getElementById('lbl-qr').src = qrUrl;
+  }
+
+  // Set default dates
+  const today = new Date();
+  const expiry = new Date();
+  expiry.setFullYear(expiry.getFullYear() + 2);
+
+  document.getElementById('packDate').value = today.toISOString().split('T')[0];
+  document.getElementById('expiryDate').value = expiry.toISOString().split('T')[0];
+
+  // Load on start
+  updateLabel();
+</script>
+</body>
+</html>
