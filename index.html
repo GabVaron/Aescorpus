@@ -512,19 +512,31 @@
     return parts.LOT;
   }
 
+  const HEADERS = { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` };
+
+  async function sbGet(path) {
+    const res = await fetch(`${SUPABASE_URL}${path}`, { headers: HEADERS });
+    return res.json();
+  }
+
   async function fetchAndPopulate(lotCode) {
     try {
-      const res = await fetch(
-        `${SUPABASE_URL}/lotes_siembra?lot_code=eq.${encodeURIComponent(lotCode)}&select=*,cultivos(nombre),fincas(nombre,slug)&limit=1`,
-        { headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` } }
-      );
-      const data = await res.json();
-      if (!Array.isArray(data) || data.length === 0) return;
+      const lots = await sbGet(`/lotes_siembra?lot_code=eq.${encodeURIComponent(lotCode)}&limit=1`);
+      if (!Array.isArray(lots) || lots.length === 0) return;
 
-      const lot = data[0];
+      const lot = lots[0];
+
+      const [cultivos, fincas] = await Promise.all([
+        lot.cultivo_id ? sbGet(`/cultivos?id=eq.${lot.cultivo_id}&select=nombre&limit=1`) : [],
+        lot.finca_id   ? sbGet(`/fincas?id=eq.${lot.finca_id}&select=nombre&limit=1`)    : [],
+      ]);
+
+      const cultivoNombre = cultivos[0]?.nombre || '';
+      const fincaNombre   = fincas[0]?.nombre   || '';
+
       setField('disp-lot',      lot.lot_code);
-      setField('disp-product',  lot.cultivos?.nombre);
-      setField('disp-origin',   lot.fincas?.nombre);
+      setField('disp-product',  cultivoNombre);
+      setField('disp-origin',   fincaNombre);
       setField('disp-operator', 'AES');
       setField('disp-pack',     formatDate(lot.fecha_campo || lot.fecha_siembra));
       setField('disp-expiry',   formatDate(lot.fecha_cosecha_estimada));
@@ -535,11 +547,11 @@
         statusEl.textContent = map[lot.estado] || lot.estado;
       }
 
-      if (lot.fincas?.nombre) {
+      if (fincaNombre) {
         const metaVals = document.querySelectorAll('.origin-meta-value');
-        if (metaVals[0]) metaVals[0].textContent = lot.fincas.nombre;
+        if (metaVals[0]) metaVals[0].textContent = fincaNombre;
         const pinLabel = document.querySelector('.map-pin-label span');
-        if (pinLabel) pinLabel.textContent = `📍 ${lot.fincas.nombre}`;
+        if (pinLabel) pinLabel.textContent = `📍 ${fincaNombre}`;
       }
     } catch (err) {
       console.error('Planifincador fetch error:', err);

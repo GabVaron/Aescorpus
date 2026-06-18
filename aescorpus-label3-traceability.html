@@ -543,6 +543,13 @@
   const SUPABASE_URL = 'https://mqdlijtowujpjnrauqag.supabase.co/rest/v1';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZGxpanRvd3VqcGpucmF1cWFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NjI4ODIsImV4cCI6MjA5NjUzODg4Mn0.pjqaZViiGDeyUnf6HeEUbcUMYv36ZLRG-mUUajqzhtA';
 
+  const HEADERS = { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` };
+
+  async function sbGet(path) {
+    const res = await fetch(`${SUPABASE_URL}${path}`, { headers: HEADERS });
+    return res.json();
+  }
+
   async function fetchLot() {
     const code = document.getElementById('lotCode').value.trim();
     const status = document.getElementById('fetchStatus');
@@ -553,23 +560,25 @@
     status.textContent = 'Fetching…';
 
     try {
-      const res = await fetch(
-        `${SUPABASE_URL}/lotes_siembra?lot_code=eq.${encodeURIComponent(code)}&select=*,cultivos(nombre),fincas(nombre,slug)&limit=1`,
-        { headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` } }
-      );
-      const data = await res.json();
+      const lots = await sbGet(`/lotes_siembra?lot_code=eq.${encodeURIComponent(code)}&limit=1`);
 
-      if (!Array.isArray(data) || data.length === 0) {
-        status.textContent = `No lot found for "${code}". Check the code or Supabase RLS policy.`;
+      if (!Array.isArray(lots) || lots.length === 0) {
+        status.textContent = `No lot found for "${code}".`;
         btn.disabled = false;
         return;
       }
 
-      const lot = data[0];
-      const cultivoNombre = lot.cultivos?.nombre || '';
-      const fincaNombre   = lot.fincas?.nombre   || '';
+      const lot = lots[0];
 
-      // Map cultivo nombre to product dropdown option
+      // Fetch cultivo and finca in parallel
+      const [cultivos, fincas] = await Promise.all([
+        lot.cultivo_id ? sbGet(`/cultivos?id=eq.${lot.cultivo_id}&select=nombre&limit=1`) : [],
+        lot.finca_id   ? sbGet(`/fincas?id=eq.${lot.finca_id}&select=nombre&limit=1`)    : [],
+      ]);
+
+      const cultivoNombre = cultivos[0]?.nombre || '';
+      const fincaNombre   = fincas[0]?.nombre   || '';
+
       const productSel = document.getElementById('product');
       const lower = cultivoNombre.toLowerCase();
       if (lower.includes('ashwagandha') && lower.includes('cacao')) {
@@ -580,22 +589,14 @@
         productSel.value = 'Single Origin Cacao';
       }
 
-      // Origin: finca name (fallback to existing value)
-      if (fincaNombre) {
-        document.getElementById('origin').value = fincaNombre;
-      }
+      if (fincaNombre) document.getElementById('origin').value = fincaNombre;
 
-      // Pack date: fecha_campo ?? fecha_siembra
       const packRaw = lot.fecha_campo || lot.fecha_siembra;
       if (packRaw) document.getElementById('packDate').value = packRaw;
-
-      // Expiry: fecha_cosecha_estimada (used as best-by proxy)
-      if (lot.fecha_cosecha_estimada) {
-        document.getElementById('expiryDate').value = lot.fecha_cosecha_estimada;
-      }
+      if (lot.fecha_cosecha_estimada) document.getElementById('expiryDate').value = lot.fecha_cosecha_estimada;
 
       updateLabel();
-      status.textContent = `✓ Loaded from Planifincador — ${cultivoNombre}${fincaNombre ? ' · ' + fincaNombre : ''}`;
+      status.textContent = `✓ ${cultivoNombre}${fincaNombre ? ' · ' + fincaNombre : ''}`;
     } catch (err) {
       status.textContent = 'Error connecting to Planifincador. Check console.';
       console.error(err);
