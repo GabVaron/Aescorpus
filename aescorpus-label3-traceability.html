@@ -404,7 +404,7 @@
     </div>
     <div class="field">
       <label>Net Weight</label>
-      <input type="text" id="weight" value="100g" placeholder="100g">
+      <input type="text" id="weight" value="8 oz" placeholder="8 oz">
     </div>
   </div>
 
@@ -531,7 +531,7 @@
   // Set default dates
   const today = new Date();
   const expiry = new Date();
-  expiry.setFullYear(expiry.getFullYear() + 2);
+  expiry.setFullYear(expiry.getFullYear() + 1);
 
   document.getElementById('packDate').value = today.toISOString().split('T')[0];
   document.getElementById('expiryDate').value = expiry.toISOString().split('T')[0];
@@ -590,10 +590,7 @@
       }
 
       if (fincaNombre) document.getElementById('origin').value = fincaNombre;
-
-      const packRaw = lot.fecha_campo || lot.fecha_siembra;
-      if (packRaw) document.getElementById('packDate').value = packRaw;
-      if (lot.fecha_cosecha_estimada) document.getElementById('expiryDate').value = lot.fecha_cosecha_estimada;
+      // Pack date = print date (today), expiry = 1 year later — set by default JS, not overridden from DB
 
       updateLabel();
       status.textContent = `✓ ${cultivoNombre}${fincaNombre ? ' · ' + fincaNombre : ''}`;
