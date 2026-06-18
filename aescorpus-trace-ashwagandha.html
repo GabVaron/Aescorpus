@@ -485,26 +485,107 @@
 </footer>
 
 <script>
-  function parseQR() {
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get('d');
-    if (!raw) return;
-    const decoded = decodeURIComponent(raw);
-    const parts = {};
-    decoded.split('|').forEach(p => {
-      const idx = p.indexOf(':');
-      if (idx > -1) {
-        parts[p.slice(0, idx)] = p.slice(idx + 1);
-      }
-    });
-    if (parts.LOT)  document.getElementById('disp-lot').textContent = parts.LOT;
-    if (parts.PROD) document.getElementById('disp-product').textContent = parts.PROD;
-    if (parts.ORIG) document.getElementById('disp-origin').textContent = parts.ORIG;
-    if (parts.EXP)  document.getElementById('disp-expiry').textContent = parts.EXP;
-    if (parts.OP)   document.getElementById('disp-operator').textContent = parts.OP;
-    if (parts.PACK) document.getElementById('disp-pack').textContent = parts.PACK;
+  const SUPABASE_URL  = 'https://mqdlijtowujpjnrauqag.supabase.co/rest/v1';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZGxpanRvd3VqcGpucmF1cWFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NjI4ODIsImV4cCI6MjA5NjUzODg4Mn0.pjqaZViiGDeyUnf6HeEUbcUMYv36ZLRG-mUUajqzhtA';
+  const HEADERS = { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` };
+
+  function setField(id, val) {
+    if (val) document.getElementById(id).textContent = val;
   }
-  parseQR();
+
+  function formatDate(d) {
+    if (!d) return null;
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  }
+
+  function applyQRParams(raw) {
+    const parts = {};
+    decodeURIComponent(raw).split('|').forEach(p => {
+      const idx = p.indexOf(':');
+      if (idx > -1) parts[p.slice(0, idx)] = p.slice(idx + 1);
+    });
+    setField('disp-lot',      parts.LOT);
+    setField('disp-product',  parts.PROD);
+    setField('disp-origin',   parts.ORIG);
+    setField('disp-expiry',   parts.EXP);
+    setField('disp-operator', parts.OP);
+    setField('disp-pack',     parts.PACK);
+    return parts.LOT;
+  }
+
+  async function sbGet(path) {
+    const res = await fetch(`${SUPABASE_URL}${path}`, { headers: HEADERS });
+    return res.json();
+  }
+
+  async function fetchAndPopulate(lotCode, hasDates = false) {
+    try {
+      const lots = await sbGet(`/lotes_siembra?lot_code=eq.${encodeURIComponent(lotCode)}&limit=1`);
+      if (!Array.isArray(lots) || lots.length === 0) return;
+      const lot = lots[0];
+
+      const [cultivos, fincas] = await Promise.all([
+        lot.cultivo_id ? sbGet(`/cultivos?id=eq.${lot.cultivo_id}&select=nombre&limit=1`) : [],
+        lot.finca_id   ? sbGet(`/fincas?id=eq.${lot.finca_id}&select=nombre&limit=1`)    : [],
+      ]);
+
+      const cultivoNombre = cultivos[0]?.nombre || '';
+      const fincaNombre   = fincas[0]?.nombre   || '';
+
+      setField('disp-lot',      lot.lot_code);
+      setField('disp-product',  cultivoNombre);
+      setField('disp-origin',   fincaNombre);
+      setField('disp-operator', 'AES');
+
+      if (!hasDates) {
+        const packed = ['cosecha', 'empacado'].includes(lot.estado);
+        setField('disp-pack',   packed ? formatDate(lot.fecha_campo) : 'Pending');
+        setField('disp-expiry', packed ? '— see label' : 'Pending');
+      }
+
+      const statusLabels = { bandeja: 'Seedling', tiesto: 'Potted', campo: 'In Field', cosecha: 'Harvested', anulado: 'Voided' };
+      const statusEl = document.querySelector('.lot-status');
+      if (statusEl) statusEl.textContent = statusLabels[lot.estado] || lot.estado;
+
+      const stageMap = { bandeja: 0, tiesto: 1, campo: 2, cosecha: 3, empacado: 4 };
+      const currentStage = stageMap[lot.estado] ?? 0;
+      document.querySelectorAll('.timeline-item').forEach((el, i) => {
+        el.classList.remove('complete', 'current');
+        if (i < currentStage) el.classList.add('complete');
+        else if (i === currentStage) el.classList.add('current');
+      });
+
+      if (fincaNombre) {
+        const metaVals = document.querySelectorAll('.origin-meta-value');
+        if (metaVals[0]) metaVals[0].textContent = fincaNombre;
+        const pinLabel = document.querySelector('.map-pin-label span');
+        if (pinLabel) pinLabel.textContent = `📍 ${fincaNombre}`;
+      }
+    } catch (err) {
+      console.error('Planifincador fetch error:', err);
+    }
+  }
+
+  async function init() {
+    const params    = new URLSearchParams(window.location.search);
+    const qrRaw     = params.get('d');
+    const lotParam  = params.get('lot');
+    const packParam = params.get('pack');
+    const expParam  = params.get('exp');
+    const opParam   = params.get('op');
+    let lotCode     = null;
+
+    if (qrRaw)    lotCode = applyQRParams(qrRaw);
+    if (lotParam) {
+      lotCode = lotParam;
+      if (packParam) setField('disp-pack',     formatDate(packParam));
+      if (expParam)  setField('disp-expiry',   formatDate(expParam));
+      if (opParam)   setField('disp-operator', opParam);
+    }
+    if (lotCode) await fetchAndPopulate(lotCode, !!(packParam || expParam));
+  }
+
+  init();
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => {
