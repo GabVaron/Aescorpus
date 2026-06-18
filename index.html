@@ -538,14 +538,26 @@
       setField('disp-product',  cultivoNombre);
       setField('disp-origin',   fincaNombre);
       setField('disp-operator', 'AES');
-      setField('disp-pack',     formatDate(lot.fecha_campo || lot.fecha_siembra));
-      setField('disp-expiry',   formatDate(lot.fecha_cosecha_estimada));
 
+      // Pack date only meaningful once harvested/packed
+      const packed = ['cosecha', 'empacado'].includes(lot.estado);
+      setField('disp-pack',   packed ? formatDate(lot.fecha_campo) : 'Pending');
+      setField('disp-expiry', packed ? '— see label' : 'Pending');
+
+      // Lot status badge
+      const statusLabels = { bandeja: 'Seedling', tiesto: 'Potted', campo: 'In Field', cosecha: 'Harvested', anulado: 'Voided' };
       const statusEl = document.querySelector('.lot-status');
-      if (statusEl && lot.estado) {
-        const map = { bandeja: 'Seedling', tiesto: 'Potted', campo: 'In Field', cosecha: 'Harvested', anulado: 'Voided' };
-        statusEl.textContent = map[lot.estado] || lot.estado;
-      }
+      if (statusEl) statusEl.textContent = statusLabels[lot.estado] || lot.estado;
+
+      // Dynamic timeline based on estado
+      // Steps: 0=Farm Harvest, 1=Receiving, 2=Processing, 3=Packaged, 4=Delivered
+      const stageMap = { bandeja: 0, tiesto: 1, campo: 2, cosecha: 3, empacado: 4 };
+      const currentStage = stageMap[lot.estado] ?? 0;
+      document.querySelectorAll('.timeline-item').forEach((el, i) => {
+        el.classList.remove('complete', 'current');
+        if (i < currentStage) el.classList.add('complete');
+        else if (i === currentStage) el.classList.add('current');
+      });
 
       if (fincaNombre) {
         const metaVals = document.querySelectorAll('.origin-meta-value');
