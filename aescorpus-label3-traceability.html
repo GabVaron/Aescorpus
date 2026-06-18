@@ -517,12 +517,12 @@
     const barcodeUrl = `https://barcodeapi.org/api/128/${encodeURIComponent(barcodeData)}`;
     document.getElementById('lbl-barcode').src = barcodeUrl;
 
-    // QR encodes only the lot code — traceability page fetches live data from Supabase
+    // QR carries lot code + label dates so report matches the printed label exactly
     const isAshwagandha = product.toLowerCase().includes('ashwagandha');
     const traceBase = isAshwagandha
       ? 'https://gabvaron.github.io/Aescorpus/aescorpus-trace-ashwagandha.html'
       : 'https://gabvaron.github.io/Aescorpus/';
-    const traceUrl = `${traceBase}?lot=${encodeURIComponent(lot)}`;
+    const traceUrl = `${traceBase}?lot=${encodeURIComponent(lot)}&pack=${packDate}&exp=${expiryDate}&op=${encodeURIComponent(operator)}&wt=${encodeURIComponent(weight)}`;
     const qrUrl = `https://barcodeapi.org/api/qr/${encodeURIComponent(traceUrl)}`;
     document.getElementById('lbl-qr').src = qrUrl;
   }

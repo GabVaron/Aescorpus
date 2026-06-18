@@ -519,7 +519,7 @@
     return res.json();
   }
 
-  async function fetchAndPopulate(lotCode) {
+  async function fetchAndPopulate(lotCode, hasDates = false) {
     try {
       const lots = await sbGet(`/lotes_siembra?lot_code=eq.${encodeURIComponent(lotCode)}&limit=1`);
       if (!Array.isArray(lots) || lots.length === 0) return;
@@ -539,10 +539,12 @@
       setField('disp-origin',   fincaNombre);
       setField('disp-operator', 'AES');
 
-      // Pack date only meaningful once harvested/packed
-      const packed = ['cosecha', 'empacado'].includes(lot.estado);
-      setField('disp-pack',   packed ? formatDate(lot.fecha_campo) : 'Pending');
-      setField('disp-expiry', packed ? '— see label' : 'Pending');
+      // Only set dates from DB if QR didn't already provide them from the printed label
+      if (!hasDates) {
+        const packed = ['cosecha', 'empacado'].includes(lot.estado);
+        setField('disp-pack',   packed ? formatDate(lot.fecha_campo) : 'Pending');
+        setField('disp-expiry', packed ? '— see label' : 'Pending');
+      }
 
       // Lot status badge
       const statusLabels = { bandeja: 'Seedling', tiesto: 'Potted', campo: 'In Field', cosecha: 'Harvested', anulado: 'Voided' };
@@ -574,10 +576,26 @@
     const params   = new URLSearchParams(window.location.search);
     const qrRaw    = params.get('d');
     const lotParam = params.get('lot');
-    let lotCode    = null;
-    if (qrRaw)    lotCode = applyQRParams(qrRaw);
-    if (lotParam) lotCode = lotParam;
-    if (lotCode)  await fetchAndPopulate(lotCode);
+    const packParam = params.get('pack');
+    const expParam  = params.get('exp');
+    const opParam   = params.get('op');
+
+    let lotCode = null;
+
+    // Legacy QR format (?d=LOT:...|PROD:...)
+    if (qrRaw) lotCode = applyQRParams(qrRaw);
+
+    // New format: ?lot=FB-CAC-001&pack=2026-06-18&exp=2027-06-18&op=AES
+    if (lotParam) {
+      lotCode = lotParam;
+      // Apply label dates from QR — these match what was printed
+      if (packParam) setField('disp-pack',   formatDate(packParam));
+      if (expParam)  setField('disp-expiry', formatDate(expParam));
+      if (opParam)   setField('disp-operator', opParam);
+    }
+
+    // Fetch live estado/product/finca from Supabase
+    if (lotCode) await fetchAndPopulate(lotCode, !!(packParam || expParam));
   }
 
   init();
