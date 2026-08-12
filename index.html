@@ -167,6 +167,15 @@
 
   .lot-field-value.highlight { font-weight: 700; }
 
+  .lot-field.operator {
+    grid-column: 1 / -1;
+    text-align: center;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .magma-only { display: none; }
+
   .journey-section {
     max-width: 540px;
     margin: 0 auto;
@@ -401,87 +410,63 @@
         <div class="lot-field-label">Best By</div>
         <div class="lot-field-value" id="disp-expiry">—</div>
       </div>
-      <div class="lot-field">
+      <div class="lot-field operator">
         <div class="lot-field-label">Operator</div>
         <div class="lot-field-value" id="disp-operator">AES</div>
-      </div>
-      <div class="lot-field">
-        <div class="lot-field-label">Certified</div>
-        <div class="lot-field-value">FSMA 204 ✓</div>
       </div>
     </div>
   </div>
 </section>
 
 <section class="journey-section">
-  <div class="section-label fade-in" style="animation-delay:0.3s">Chain of Custody</div>
+  <div class="section-label fade-in" style="animation-delay:0.3s">Traceability Summary</div>
   <div class="timeline fade-in" style="animation-delay:0.4s">
     <div class="timeline-item complete">
       <div class="timeline-dot"></div>
       <div class="timeline-step">Step 01</div>
-      <div class="timeline-name">Farm Harvest</div>
-      <div class="timeline-detail">Finca La Patriota · Lares, Puerto Rico<br>Single origin cacao — hand selected at harvest</div>
+      <div class="timeline-name">Ingredient sourcing</div>
+      <div class="timeline-detail" id="source-detail">Cacao · Finca La Patriota · Lares, Puerto Rico</div>
     </div>
     <div class="timeline-item complete">
       <div class="timeline-dot"></div>
       <div class="timeline-step">Step 02</div>
-      <div class="timeline-name">Receiving & Inspection</div>
-      <div class="timeline-detail">Lot received · COA verified · Quality checked<br>Traceability lot code assigned</div>
-    </div>
-    <div class="timeline-item complete">
-      <div class="timeline-dot"></div>
-      <div class="timeline-step">Step 03</div>
-      <div class="timeline-name">Processing & Formulation</div>
-      <div class="timeline-detail">Dried · Ground · Blended with adaptogenic ingredients<br>Batch transformation recorded</div>
+      <div class="timeline-name">Packaging</div>
+      <div class="timeline-detail" id="pack-detail">AgroInnova · Caguas, Puerto Rico</div>
     </div>
     <div class="timeline-item current">
       <div class="timeline-dot"></div>
-      <div class="timeline-step">Step 04</div>
-      <div class="timeline-name">Packaged & Sealed</div>
-      <div class="timeline-detail">Lot sealed · Label applied · Ready for dispatch<br>This is your product</div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-dot"></div>
-      <div class="timeline-step">Step 05</div>
-      <div class="timeline-name">Delivered to You</div>
-      <div class="timeline-detail">Full chain documented · Records retained 2 years</div>
+      <div class="timeline-step">Step 03</div>
+      <div class="timeline-name">Lot identification</div>
+      <div class="timeline-detail" id="lot-detail">Lot code shown above</div>
     </div>
   </div>
 </section>
 
 <section class="origin-section">
   <div class="origin-inner">
-    <div class="section-label">Farm Origin</div>
-    <h2 class="origin-headline">Grown in the mountains<br>of <em>Lares, Puerto Rico</em></h2>
-    <p class="origin-body">Our cacao is sourced from the tropical highlands of Lares — a region known for its fertile soil, consistent rainfall, and the biodiversity that makes Puerto Rican ingredients unique. Every lot carries the character of this land.</p>
+    <div class="section-label">Ingredient Origin</div>
+    <h2 class="origin-headline" id="origin-headline">Cacao from <em>Lares, Puerto Rico</em></h2>
+    <p class="origin-body" id="origin-body">The cacao in this lot was purchased from Finca La Patriota in Lares, Puerto Rico.</p>
     <div class="origin-meta">
       <div class="origin-meta-item">
-        <span class="origin-meta-label">Farm</span>
-        <span class="origin-meta-value">Finca La Patriota</span>
+        <span class="origin-meta-label">Cacao</span>
+        <span class="origin-meta-value">Finca La Patriota · Lares</span>
       </div>
-      <div class="origin-meta-item">
-        <span class="origin-meta-label">Municipality</span>
-        <span class="origin-meta-value">Lares, Puerto Rico</span>
-      </div>
-      <div class="origin-meta-item">
-        <span class="origin-meta-label">Elevation</span>
-        <span class="origin-meta-value">~400–600m</span>
-      </div>
-      <div class="origin-meta-item">
-        <span class="origin-meta-label">Method</span>
-        <span class="origin-meta-value">Agroforestry</span>
+      <div class="origin-meta-item magma-only">
+        <span class="origin-meta-label">Ashwagandha</span>
+        <span class="origin-meta-value">Finca Aescorpus · San Germán</span>
       </div>
     </div>
     <div class="map-container">
       <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3789.198276634276!2d-66.85254692547741!3d18.246729982794527!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8c02cf8b1cff0579%3A0xfa300b25fa1ea63c!2sFinca%20La%20Patriota!5e0!3m2!1ses!2spr!4v1779470823897!5m2!1ses!2spr" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-      <div class="map-pin-label"><span>📍 Finca La Patriota · Lares, Puerto Rico</span></div>
+      <div class="map-pin-label"><span>📍 Cacao origin · Finca La Patriota · Lares, Puerto Rico</span></div>
     </div>
   </div>
 </section>
 
 <footer class="footer">
   <div class="footer-brand">AESCORPUS</div>
-  <div class="footer-sub">Adaptogens from the Tropics · Puerto Rico · 2025</div>
+  <div class="footer-sub">Adaptogens from the Tropics · Puerto Rico · <span id="footer-year">2026</span></div>
 </footer>
 
 <script>
@@ -509,6 +494,19 @@
     setField('disp-expiry',   parts.EXP);
     setField('disp-operator', parts.OP);
     setField('disp-pack',     parts.PACK);
+    setField('pack-detail',   ['AgroInnova · Caguas, Puerto Rico', parts.PACK].filter(Boolean).join(' · '));
+    setField('lot-detail',    parts.LOT ? `Lot ${parts.LOT}` : null);
+
+    const isMagma = (parts.PROD || '').trim().toLowerCase() === 'magma';
+    document.querySelectorAll('.magma-only').forEach(el => {
+      el.style.display = isMagma ? 'flex' : 'none';
+    });
+    if (isMagma) {
+      setField('disp-origin', 'Cacao: Lares · Ashwagandha: San Germán');
+      setField('source-detail', 'Cacao · Finca La Patriota · Lares, Puerto Rico | Ashwagandha · Finca Aescorpus · San Germán, Puerto Rico');
+      document.getElementById('origin-headline').innerHTML = 'Ingredients from <em>Lares and San Germán, Puerto Rico</em>';
+      setField('origin-body', 'The cacao in Magma was purchased from Finca La Patriota in Lares. Its ashwagandha was grown by Finca Aescorpus in San Germán.');
+    }
     return parts.LOT;
   }
 
@@ -598,6 +596,7 @@
     if (lotCode) await fetchAndPopulate(lotCode, !!(packParam || expParam));
   }
 
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
   init();
 
   const observer = new IntersectionObserver((entries) => {
